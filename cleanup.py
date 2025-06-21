@@ -1,27 +1,28 @@
-import os
-import time
-from datetime import datetime
+import os, time, shutil
+from datetime import datetime, timedelta
 
 GENERATED_DIR = os.path.join(os.path.dirname(__file__), 'generated')
-EXPIRY_SECONDS = 5 * 60  # 30 minutes
+EXPIRE_AFTER_MINUTES = 15
 
-now = time.time()
-deleted_any = False
+def cleanup_expired_folders():
+    now = datetime.now()
+    if not os.path.exists(GENERATED_DIR):
+        print("Generated directory not found.")
+        return
 
-for folder_name in os.listdir(GENERATED_DIR):
-    folder_path = os.path.join(GENERATED_DIR, folder_name)
-    if os.path.isdir(folder_path):
-        # Use folder modification time
-        folder_mtime = os.path.getmtime(folder_path)
-        age = now - folder_mtime
-        if age > EXPIRY_SECONDS:
-            try:
-                import shutil
-                shutil.rmtree(folder_path)
-                print(f"🗑️ Deleted expired folder: {folder_path}")
-                deleted_any = True
-            except Exception as e:
-                print(f"❌ Failed to delete {folder_path}: {e}")
+    for folder in os.listdir(GENERATED_DIR):
+        path = os.path.join(GENERATED_DIR, folder)
+        if os.path.isdir(path):
+            modified_time = datetime.fromtimestamp(os.path.getmtime(path))
+            if now - modified_time > timedelta(minutes=EXPIRE_AFTER_MINUTES):
+                try:
+                    shutil.rmtree(path)
+                    print(f"🧹 Deleted: {path}")
+                except Exception as e:
+                    print(f"⚠️ Error deleting {path}: {e}")
 
-if not deleted_any:
-    print("✅ No expired folders found.")
+if __name__ == '__main__':
+    while True:
+        print("🔄 Checking for expired folders...")
+        cleanup_expired_folders()
+        time.sleep(600)  # wait 10 minutes

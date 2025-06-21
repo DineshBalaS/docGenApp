@@ -1,0 +1,14 @@
+services:
+  - name: docgen-web
+    type: web
+    env: docker
+    plan: free
+    buildCommand: ""
+    startCommand: python app.py
+
+  - name: docgen-cleaner
+    type: worker
+    env: docker
+    plan: free
+    buildCommand: ""
+    startCommand: python cleanup.py
