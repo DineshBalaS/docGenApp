@@ -1,0 +1,69 @@
+
+# 📝 DocGenApp - Lightweight Version (Flask + Vanilla JS)
+
+## 🎯 GOAL:
+A one-click web app that replaces placeholders in .docx and .pptx using form data. Works on PC and mobile. Responsive via Tailwind CDN.
+
+---
+
+## 📁 STRUCTURE
+
+docgenapp/
+│
+├── app.py                   # Main Flask app (handles logic and routes)
+├── model.py                 # (Optional) Logic for doc/ppt generation
+├── templates/
+│   └── index.html           # Tailwind CDN + form UI
+│
+├── templates_src/
+│   ├── template.docx        # Word template with placeholders
+│   └── ppt.pptx             # PPT template with placeholders
+│
+├── generated/
+│   └── (Filled files)       # Temp output of filled .docx/.pptx
+│
+├── static/
+│   └── preview.js           # Optional JS to show form data summary
+│
+├── requirements.txt         # Flask + docx + pptx
+└── README.md
+
+---
+
+## ✅ CHECKLIST
+
+### 🔧 Backend
+- [X] Set up `app.py` with basic Flask server
+- [X] Create `/` route to serve form and handle POST
+- [X] Implement placeholder replacement for `.docx`
+- [X] Implement placeholder replacement for `.pptx`
+- [X] Save files in `generated/` and allow download
+- [ ] Clean up old files periodically
+
+### 🎨 Frontend
+- [X] Build `index.html` form using Tailwind CSS (CDN)
+- [X] Add JS to display preview of filled values (optional)
+- [X] Ensure full mobile responsiveness
+
+### 📦 Logic & Utils
+- [X] Optional: Move logic into `model.py`
+- [X] Create utility function for each file type
+
+### 🧪 Testing & UX
+- [ ] Manual form test with real template files
+- [ ] Error handling for missing fields or corrupt files
+- [ ] File naming convention with timestamp/client name
+
+---
+
+## 📦 DEPENDENCIES
+- Flask
+- python-docx
+- python-pptx
+
+---
+
+## 🔁 FUTURE CONSIDERATIONS
+- Add field validation
+- Add PDF download option (later)
+- Allow basic branding/header selection

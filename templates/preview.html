@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Preview & Download</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 text-gray-900">
+    <div class="max-w-4xl mx-auto p-6">
+      <h1 class="text-3xl font-bold mb-6 text-center text-blue-700">
+        Preview Summary
+      </h1>
+
+      <div class="bg-white shadow rounded-lg p-6 overflow-auto max-h-[600px]">
+        <ul class="space-y-4">
+          {% for key, value in data.items() %} {% if key.endswith('__web') %} {%
+          set base_key = key.replace('__web', '') %}
+          <li class="border rounded-lg p-4 bg-gray-50 shadow-sm">
+            <strong class="block text-sm text-gray-600 mb-2"
+              >{{ base_key | title }}:</strong
+            >
+            {% if value %}
+            <img
+              src="/{{ value }}"
+              alt="{{ base_key }}"
+              class="rounded border max-w-xs max-h-60 object-contain"
+            />
+            {% else %}
+            <span class="text-gray-500 italic">No image uploaded</span>
+            {% endif %}
+          </li>
+          {% elif (key ~ '__web') not in data %}
+          <li
+            class="border rounded-lg p-4 bg-white shadow-sm max-h-52 overflow-y-auto"
+          >
+            <strong class="block text-sm text-gray-600 mb-1"
+              >{{ key | title }}:</strong
+            >
+            <div class="text-gray-800 whitespace-pre-line break-words">
+              {{ value }}
+            </div>
+          </li>
+          {% endif %} {% endfor %}
+        </ul>
+      </div>
+
+      <div class="mt-6 flex flex-wrap gap-4 justify-center">
+        <a
+          href="{{ docx_file }}"
+          class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+          >Download Word File</a
+        >
+        <a
+          href="{{ pptx_file }}"
+          class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+          >Download PowerPoint File</a
+        >
+      </div>
+
+      <div class="mt-6 text-center">
+        <a href="/" class="text-blue-500 hover:underline">Go back to form</a>
+      </div>
+    </div>
+  </body>
+</html>

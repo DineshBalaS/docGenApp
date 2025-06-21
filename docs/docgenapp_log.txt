@@ -1,0 +1,72 @@
+
+# 📋 DocGenApp Project Log & Progress Tracker
+
+## ✅ Overview
+A Flask-based web app to generate `.docx` and `.pptx` files from templates with user-filled placeholder values. The app will work on both PC and mobile using a modern UI built with vanilla JS and Tailwind CSS.
+
+---
+
+## 📁 Project Structure
+
+docgenapp/
+│
+├── app/                          # Flask app
+│   ├── templates/               # HTML templates (Jinja2)
+│   │   └── index.html
+│   ├── static/
+│   │   ├── css/
+│   │   │   └── styles.css       # Tailwind (compiled)
+│   │   └── js/
+│   │       └── main.js          # Form logic & preview
+│   ├── generated/               # Temporary storage of output files
+│   ├── templates_src/           # Static .docx and .pptx templates
+│   │   ├── template.docx
+│   │   └── ppt.pptx
+│   ├── utils/
+│   │   └── generator.py         # Placeholder replacement logic
+│   └── routes.py                # Flask routes
+│
+├── tailwind.config.js           # Tailwind config
+├── postcss.config.js            # For Tailwind build
+├── app.py                       # App entry point
+├── requirements.txt             # Python dependencies
+├── README.md
+└── .gitignore
+
+---
+
+## 🧱 Development Workflow
+
+### Backend
+- [ ] `app.py` – Initialize Flask app
+- [ ] `routes.py` – Handle GET (form) & POST (generation)
+- [ ] `generator.py` – Replace placeholders in `.docx`/`.pptx`
+
+### Frontend
+- [ ] `index.html` – Responsive Tailwind form for input
+- [ ] `main.js` – Fetch form data, preview before download
+- [ ] `output.css` – Tailwind build output
+
+### File Handling
+- [ ] Serve generated files securely using Flask `send_file`
+- [ ] Auto-cleanup old files
+
+### Tailwind Setup
+- [ ] `npm init` + install Tailwind via PostCSS
+- [ ] Configure Tailwind to scan `templates/` and `static/js/`
+- [ ] Build CSS with watch command
+
+### Dependencies (`requirements.txt`)
+- Flask
+- python-docx
+- python-pptx
+
+---
+
+## 🚧 Notes & Limitations
+- Fixed template files only (one `.docx`, one `.pptx`)
+- No login system
+- No PDF export
+- Manual form entry only (no bulk input)
+- Designed for single output per session
+

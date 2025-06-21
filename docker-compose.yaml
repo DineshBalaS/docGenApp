@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  docgenapp:
+    build: .
+    ports:
+      - "6900:6900"
+    volumes:
+      - ./generated:/app/generated  # so you can access output
+    environment:
+      - FLASK_SECRET_KEY=your-secret-key
+    restart: unless-stopped
