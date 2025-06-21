@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, send_file, url_for, session
+from flask import Flask, render_template, request, send_file, url_for, session, abort
 from model import generate_docx, generate_pptx
 import os
 import uuid
 import re
+import tempfile
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'generated'
@@ -60,6 +61,7 @@ def index():
                     filename = uploaded_file.filename
                     filepath = os.path.join(session_folder, filename)
                     uploaded_file.save(filepath)
+                    os.utime(session_folder, None)
                     data[key] = filepath
                     data[f"{key}__web"] = os.path.join('generated', session_id, filename)
                 else:
@@ -76,34 +78,44 @@ def index():
                 else:
                     data[key] = ", ".join(values) if len(values) > 1 else request.form.get(key, '')
                     
-        session['form_data'] = data.copy()
 
         # Generate files
         client_name = request.form.get('client name', 'ProposalClient').strip().replace(' ', '_')
         safe_name = re.sub(r'[^\w\-]', '', client_name)  # Remove unsafe characters
 
-        docx_filename = f"{safe_name}_Proposal.docx"
-        pptx_filename = f"{safe_name}_Presentation.pptx"
 
-        docx_path = os.path.join(app.config['UPLOAD_FOLDER'], docx_filename)
-        pptx_path = os.path.join(app.config['UPLOAD_FOLDER'], pptx_filename)
-
-        
-
-        generate_docx(data, output_path=docx_path)
-        generate_pptx(data, output_path=pptx_path)
+        session['form_data'] = data.copy()
 
         return render_template('preview.html', data=data,
-                       docx_file=url_for('download_file', filename=docx_filename),
-                       pptx_file=url_for('download_file', filename=pptx_filename))
+                       docx_file=url_for('download_dynamic', filetype="docx"),
+                       pptx_file=url_for('download_dynamic', filetype="pptx"))
 
     previous_data = session.pop('form_data', None)
     return render_template('index.html', placeholders=PLACEHOLDERS, previous_data=previous_data)
 
-@app.route('/download/<filename>')
-def download_file(filename):
-    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    return send_file(path, as_attachment=True)
+@app.route('/download/<filetype>')
+def download_dynamic(filetype):
+    data = session.get('form_data')
+    if not data:
+        abort(400, "Session expired or no data found.")
+
+    client_name = data.get('client name', 'DocGenUser').strip().replace(' ', '_')
+    safe_name = re.sub(r'[^\w\-]', '', client_name)
+    ext = 'docx' if filetype == 'docx' else 'pptx'
+    filename = f"{safe_name}_Generated.{ext}"
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{ext}') as tmp:
+        temp_path = tmp.name
+
+    # Generate appropriate file
+    if filetype == 'docx':
+        generate_docx(data, output_path=temp_path)
+    elif filetype == 'pptx':
+        generate_pptx(data, output_path=temp_path)
+    else:
+        abort(404)
+
+    return send_file(temp_path, as_attachment=True, download_name=filename)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6900, debug=True)

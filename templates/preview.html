@@ -47,15 +47,17 @@
 
       <div class="mt-6 flex flex-wrap gap-4 justify-center">
         <a
-          href="{{ docx_file }}"
-          class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-          >Download Word File</a
+          href="{{ url_for('download_dynamic', filetype='docx') }}"
+          class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
         >
+          Download Word File
+        </a>
         <a
-          href="{{ pptx_file }}"
-          class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
-          >Download PowerPoint File</a
+          href="{{ url_for('download_dynamic', filetype='pptx') }}"
+          class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
         >
+          Download PowerPoint File
+        </a>
       </div>
 
       <div class="mt-6 text-center">
