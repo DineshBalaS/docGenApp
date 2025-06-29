@@ -1,9 +1,11 @@
-from flask import Flask, render_template, request, send_file, url_for, session, abort
+from flask import Flask, render_template, request, send_file, url_for, session, abort, after_this_request
 from model import generate_docx, generate_pptx
 import os
 import uuid
 import re
 import tempfile
+import threading
+import shutil
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'generated'
@@ -115,7 +117,29 @@ def download_dynamic(filetype):
     else:
         abort(404)
 
+    @after_this_request
+    def cleanup(response):
+        try:
+            # Remove temp generated file
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+            # Also delete image session folder
+            for key in data:
+                if key.endswith('__web') and data[key]:
+                    full_path = os.path.join(app.root_path, data[key])
+                    session_folder = os.path.dirname(full_path)
+                    if os.path.exists(session_folder):
+                        import shutil
+                        shutil.rmtree(session_folder)
+                        break  # one is enough, all images are in the same folder
+        except Exception as e:
+            print(f"Cleanup failed: {e}")
+        return response
+
     return send_file(temp_path, as_attachment=True, download_name=filename)
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6900, debug=True)
