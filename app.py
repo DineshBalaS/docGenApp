@@ -13,39 +13,71 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 app.secret_key = os.environ.get("7338887062", os.urandom(24))
 
 PLACEHOLDERS = [
-    "client name",
     "property address",
-    "property type",
+    "client name",
+    "Property image 1",
+    "Property image 2",
+    "Property 3D images 2",
+    "Property 3D images 1",
+    "Interior image 2",
+    "Interior image 1",
+    "Interior image 4",
+    "Interior image 3",
+    "existing use",
+    "local council name",
     "total area",
     "constraints",
-    "constraints - e.g.,",
-    "local council name",
+    "OS Map",
     "scope of work",
-    "proposed use",
-    "existing use",
-    "PD/ Full PP/ House holder",
+    "conceptual Design -  chatgpt",
+    "Conceptual Floor Plan",
+    "Link 1",
     "timeline 1",
-    "timeline 2",
     "property address - sample 1",
-    "property address - sample 2",
     "property - sample 1 - screenshot",
     "property - sample 1 - image",
+    "Sim app Floor plan 1",
+    "Sim app elevation 1",
+    "Link 2",
+    "timeline 2",
+    "property address - sample 2",
     "property - sample 2 - screenshot",
     "property - sample 2 - image",
+    "Sim app floor plan 2",
+    "Sim app elevation 2",
+    "rejected application- image",
     "list of documents required",
-    "Link 1",
-    "Link 2",
-    "Planning description in 2 lines",
-    "Planning description in 2 lines- 2",
+    "PD/ Full PP/ House holder",
+    "property type",
+    "constraints - e.g.",
     "subject to property constraints similar to “whether that’s for guests, a home office, or just your own cosy retreat.”",
-    "proposed change of use"
+    "proposed change of use",
+    "Planning description in 2 lines",
+    "proposed use"
 ]
 
 IMAGE_FIELDS = [
     "property - sample 1 - screenshot",
     "property - sample 1 - image",
     "property - sample 2 - screenshot",
-    "property - sample 2 - image"
+    "property - sample 2 - image",
+    "Property image 1",
+    "Property image 2",
+    "Property 3D images 1",
+    "Property 3D images 2",
+    "Interior image 1",
+    "Interior image 2",
+    "Interior image 3",
+    "Interior image 4",
+    "OS Map",
+    "scope of work",
+    "conceptual Design -  chatgpt",
+    "Conceptual Floor Plan",
+    "Sim app Floor plan 1",
+    "Sim app elevation 1",
+    "Sim app floor plan 2",
+    "Sim app elevation 2",
+    "rejected application- image"
 ]
 
 @app.route('/', methods=['GET', 'POST'])
@@ -93,7 +125,7 @@ def index():
                        pptx_file=url_for('download_dynamic', filetype="pptx"))
 
     previous_data = session.pop('form_data', None)
-    return render_template('index.html', placeholders=PLACEHOLDERS, previous_data=previous_data)
+    return render_template('index.html', placeholders=PLACEHOLDERS, previous_data=previous_data, IMAGE_FIELDS=IMAGE_FIELDS)
 
 @app.route('/download/<filetype>')
 def download_dynamic(filetype):

@@ -123,7 +123,7 @@
               {% endfor %}
             </div>
 
-            {% elif 'image' in field|lower or 'screenshot' in field|lower %}
+            {% elif field in IMAGE_FIELDS %}
             <div
               class="flex items-center justify-between border rounded-lg px-4 py-2 bg-white"
             >

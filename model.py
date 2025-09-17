@@ -4,16 +4,31 @@ from pptx import Presentation
 from pptx.util import Inches as PptInches
 import os
 import re
+from PIL import Image
 
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), 'templates_src')
 DOCX_TEMPLATE = os.path.join(TEMPLATE_DIR, 'template.docx')
-PPTX_TEMPLATE = os.path.join(TEMPLATE_DIR, 'ppt.pptx')
+PPTX_TEMPLATE = os.path.join(TEMPLATE_DIR, 'newPpt.pptx')
 
 IMAGE_FIELDS = [
     "property - sample 1 - screenshot",
     "property - sample 1 - image",
     "property - sample 2 - screenshot",
-    "property - sample 2 - image"
+    "property - sample 2 - image",
+    "Property image 1",
+    "Property image 2",
+    "Property 3D images 1",
+    "Property 3D images 2",
+    "Interior image 1",
+    "Interior image 2",
+    "Interior image 3",
+    "Interior image 4",
+    "OS Map",
+    "Sim app Floor plan 1",
+    "Sim app elevation 1",
+    "Sim app floor plan 2",
+    "Sim app elevation 2",
+    "rejected application- image"
 ]
 
 if not os.path.exists(DOCX_TEMPLATE):
@@ -103,17 +118,27 @@ def generate_pptx(data: dict, output_path: str):
                                 if actual_key in IMAGE_FIELDS:
                                     image_path = os.path.abspath(value)
                                     if os.path.isfile(image_path):
-                                        # Remember shape's position & size
-                                        left = shape.left
-                                        top = shape.top
-                                        width = PptInches(4.5)  # Adjust size as needed
-                                        height = None  # Let PowerPoint auto-calculate height
+                                        try:
+                                            # 🆕 Validate the image with PIL before adding it
+                                            # 🆕 This will raise an error if the file is not a valid image
+                                            Image.open(image_path).verify()
 
-                                        # Remove placeholder text shape
-                                        slide.shapes._spTree.remove(shape._element)
+                                            # Remember shape's position & size
+                                            left = shape.left
+                                            top = shape.top
+                                            width = PptInches(4.5)
+                                            height = None
 
-                                        # Insert image
-                                        slide.shapes.add_picture(image_path, left, top, width=width, height=height)
+                                            # Remove placeholder text shape
+                                            slide.shapes._spTree.remove(shape._element)
+
+                                            # Insert image
+                                            slide.shapes.add_picture(image_path, left, top, width=width, height=height)
+                                        
+                                        
+                                        except (IOError, OSError) as e:
+                                            # 🆕 Handle invalid or corrupted images gracefully
+                                            print(f"⚠️ Could not process image file at: {image_path} due to error: {e}")
                                     else:
                                         print(f"⚠️ Image file not found: {image_path}")
                                 else:
