@@ -7,6 +7,7 @@ import tempfile
 import threading
 import shutil
 from PIL import Image
+from io import BytesIO
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'generated'
@@ -30,7 +31,7 @@ PLACEHOLDERS = [
     "constraints",
     "OS Map",
     "scope of work",
-    "conceptual Design -  chatgpt",
+    "Conceptual Design Chatgpt",
     "Conceptual Floor Plan",
     "Link 1",
     "timeline 1",
@@ -72,7 +73,7 @@ IMAGE_FIELDS = [
     "Interior image 4",
     "OS Map",
     "scope of work",
-    "conceptual Design -  chatgpt",
+    "Conceptual Design Chatgpt",
     "Conceptual Floor Plan",
     "Sim app Floor plan 1",
     "Sim app elevation 1",
@@ -135,6 +136,8 @@ def index():
 
 
         session['form_data'] = data.copy()
+        
+        print(f"--- DATA FROM FORM ---\n{data}\n--------------------")
 
         return render_template('preview.html', data=data,
                        docx_file=url_for('download_dynamic', filetype="docx"),
@@ -154,38 +157,32 @@ def download_dynamic(filetype):
     ext = 'docx' if filetype == 'docx' else 'pptx'
     filename = f"{safe_name}_Generated.{ext}"
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{ext}') as tmp:
-        temp_path = tmp.name
-
-    # Generate appropriate file
-    if filetype == 'docx':
-        generate_docx(data, output_path=temp_path)
-    elif filetype == 'pptx':
-        generate_pptx(data, output_path=temp_path)
+    # Generate file in a memory stream
+    file_stream = BytesIO()
+    if filetype == 'pptx':
+        generate_pptx(data, output_path=file_stream)
+    elif filetype == 'docx':
+        generate_docx(data, output_path=file_stream)
     else:
         abort(404)
+    file_stream.seek(0)
 
     @after_this_request
     def cleanup(response):
+        # Your image cleanup logic can remain here
         try:
-            # Remove temp generated file
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
-
-            # Also delete image session folder
             for key in data:
-                if key.endswith('__web') and data[key]:
-                    full_path = os.path.join(app.root_path, data[key])
-                    session_folder = os.path.dirname(full_path)
+                if key in IMAGE_FIELDS and data.get(key):
+                    session_folder = os.path.dirname(data[key])
                     if os.path.exists(session_folder):
                         import shutil
                         shutil.rmtree(session_folder)
-                        break  # one is enough, all images are in the same folder
+                        break
         except Exception as e:
             print(f"Cleanup failed: {e}")
         return response
 
-    return send_file(temp_path, as_attachment=True, download_name=filename)
+    return send_file(file_stream, as_attachment=True, download_name=filename)
 
 
 

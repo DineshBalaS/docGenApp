@@ -29,9 +29,9 @@ IMAGE_FIELDS = [
     "Sim app floor plan 2",
     "Sim app elevation 2",
     "rejected application- image",
-    "conceptual design chatgpt",  # <-- FIX: Corrected double space
+    "Conceptual Design Chatgpt",
     "Conceptual Floor Plan",
-    "scope of work" # Added from your app.py file
+    "scope of work"
 ]
 
 if not os.path.exists(DOCX_TEMPLATE):
@@ -75,7 +75,7 @@ def generate_docx(data: dict, output_path: str):
 
 def generate_pptx(data: dict, output_path: str):
     ppt = Presentation(PPTX_TEMPLATE)
-    for slide in ppt.slides:
+    for slide_idx, slide in enumerate(ppt.slides):
         shapes_to_delete = []
 
         for shape in list(slide.shapes):
@@ -84,6 +84,12 @@ def generate_pptx(data: dict, output_path: str):
 
             full_shape_text = "".join(run.text for p in shape.text_frame.paragraphs for run in p.runs)
             all_matches = re.findall(r"\{\{(.*?)\}\}", full_shape_text)
+            
+            if all_matches:
+                print(f"\n--- Placeholders Found on Slide {slide_idx + 1} ---")
+                for ph in all_matches:
+                    key_found = find_matching_key(ph, data.keys())
+                    print(f"  - Reading '{ph}', Matched Key: {key_found}")
 
             if not all_matches:
                 continue
@@ -133,17 +139,19 @@ def generate_pptx(data: dict, output_path: str):
 
                 if not para_matches:
                     continue
+                
+                final_text = para_text
 
                 for raw_ph in para_matches:
                     actual_key = find_matching_key(raw_ph, data.keys())
                     if actual_key:
                         value = data.get(actual_key, f"[{actual_key} ?]")
                         if isinstance(value, list): value = ", ".join(value)
-                        para_text = para_text.replace(f"{{{{{raw_ph}}}}}", str(value))
+                        final_text = final_text.replace(f"{{{{{raw_ph}}}}}", str(value))
                 
                 para.clear()
                 run = para.add_run()
-                run.text = para_text
+                run.text = final_text
         
         for shape in shapes_to_delete:
             sp_element = shape.element
