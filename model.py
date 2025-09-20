@@ -28,7 +28,9 @@ IMAGE_FIELDS = [
     "Sim app elevation 1",
     "Sim app floor plan 2",
     "Sim app elevation 2",
-    "rejected application- image"
+    "rejected application- image",
+    "conceptual Design -  chatgpt",
+    "Conceptual Floor Plan"
 ]
 
 if not os.path.exists(DOCX_TEMPLATE):
@@ -114,34 +116,44 @@ def generate_pptx(data: dict, output_path: str):
                                 value = data[actual_key]
                                 full_ph = f"{{{{{raw_ph}}}}}"
 
-                                # If image placeholder
+                                # 🆕 If it is an image placeholder, handle all scenarios within this block
                                 if actual_key in IMAGE_FIELDS:
                                     image_path = os.path.abspath(value)
-                                    if os.path.isfile(image_path):
+                                    
+                                    # New variable to store a missing message if applicable
+                                    missing_message = None
+
+                                    if not value:
+                                        missing_message = "[Image Missing: No file uploaded]"
+                                    elif not os.path.isfile(image_path):
+                                        missing_message = "[Image Missing: File not found]"
+                                    elif not image_path.lower().endswith(('.jpg', '.jpeg')):
+                                        missing_message = "[Image Missing: Wrong file type]"
+                                    else:
                                         try:
-                                            # 🆕 Validate the image with PIL before adding it
-                                            # 🆕 This will raise an error if the file is not a valid image
+                                            # Final validation to check file integrity
                                             Image.open(image_path).verify()
 
-                                            # Remember shape's position & size
                                             left = shape.left
                                             top = shape.top
                                             width = PptInches(4.5)
                                             height = None
-
-                                            # Remove placeholder text shape
+                                            
+                                            # Remove the original shape
                                             slide.shapes._spTree.remove(shape._element)
-
-                                            # Insert image
+                                            
+                                            # Insert the image
                                             slide.shapes.add_picture(image_path, left, top, width=width, height=height)
-                                        
-                                        
+
                                         except (IOError, OSError) as e:
-                                            # 🆕 Handle invalid or corrupted images gracefully
                                             print(f"⚠️ Could not process image file at: {image_path} due to error: {e}")
-                                    else:
-                                        print(f"⚠️ Image file not found: {image_path}")
+                                            missing_message = f"[Image Missing: Invalid File]"
+                                    
+                                    # 🆕 This block handles all failure scenarios for image placeholders.
+                                    if missing_message:
+                                        run.text = run.text.replace(full_ph, missing_message)
                                 else:
+                                    # ✅ This is the correct location for the regular text replacement block.
                                     # Replace text normally
                                     if isinstance(value, list):
                                         value = ", ".join(value)
@@ -149,4 +161,5 @@ def generate_pptx(data: dict, output_path: str):
                                         run.text = run.text.replace(full_ph, value)
                                     else:
                                         print(f"⚠️ Non-string for {actual_key}: {type(value)}")
+
     ppt.save(output_path)

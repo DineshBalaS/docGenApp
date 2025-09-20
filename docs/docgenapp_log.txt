@@ -70,3 +70,9 @@ docgenapp/
 - Manual form entry only (no bulk input)
 - Designed for single output per session
 
+Fix Log
+[x] Bug 1: Placeholder Text Fragmentation - Placeholders split across multiple text runs are missed.
+
+[x] Bug 2: Inconsistent Placeholder Naming - A typo in a key name (conceptual Design -  chatgpt) causes matching to fail.
+
+[x] Bug 3: Unsafe Loop for Shape Deletion - Modifying the shapes collection while iterating over it can lead to skipped items.

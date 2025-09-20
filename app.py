@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, url_for, session, abort, after_this_request
+from flask import Flask, render_template, request, send_file, url_for, session, abort, after_this_request, flash
 from model import generate_docx, generate_pptx
 import os
 import uuid
@@ -6,6 +6,7 @@ import re
 import tempfile
 import threading
 import shutil
+from PIL import Image
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'generated'
@@ -94,10 +95,25 @@ def index():
                 if uploaded_file and uploaded_file.filename:
                     filename = uploaded_file.filename
                     filepath = os.path.join(session_folder, filename)
+                    if not filename.lower().endswith(('.jpg', '.jpeg')):
+                        # 🆕 Handle wrong file type
+                        data[key] = ''
+                        data[f"{key}__web"] = ''
+                        flash(f"The file for '{key}' must be a JPEG or JPG.", 'error')
+                        continue # 🆕 Skip to the next key
+                    
                     uploaded_file.save(filepath)
-                    os.utime(session_folder, None)
-                    data[key] = filepath
-                    data[f"{key}__web"] = os.path.join('generated', session_id, filename)
+                    try:
+                        Image.open(filepath).verify() # Checks if the image is valid
+                        data[key] = filepath
+                        data[f"{key}__web"] = os.path.join('generated', session_id, filename)
+                        print(f"✅ Successfully validated and saved image: {filepath}")
+                    except (IOError, OSError) as e:
+                        os.remove(filepath)
+                        data[key] = ''
+                        data[f"{key}__web"] = ''
+                        flash(f"The file for '{key}' is corrupted and could not be used.", 'error')
+                        print(f"⚠️ Invalid image file detected and rejected: {filepath}")
                 else:
                     data[key] = ''
                     data[f"{key}__web"] = ''
