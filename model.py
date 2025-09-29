@@ -29,59 +29,43 @@ IMAGE_FIELDS = [
     "Sim app floor plan 2",
     "Sim app elevation 2",
     "rejected application- image",
-    "conceptual Design -  chatgpt",
-    "Conceptual Floor Plan"
+    "Conceptual Design Chatgpt",
+    "Conceptual Floor Plan",
+    "scope of work"
 ]
 
 if not os.path.exists(DOCX_TEMPLATE):
     raise FileNotFoundError(f"DOCX template not found at: {DOCX_TEMPLATE}")
 
-
-def clean_placeholder(placeholder):
-    return re.sub(r'\(.*?\)|-.*', '', placeholder).strip().lower()
-
-
+# NEW, SIMPLIFIED FUNCTION: Replaces old clean_placeholder and find_matching_key
 def find_matching_key(raw_placeholder, data_keys):
-    raw_clean = raw_placeholder.strip().lower()
-    if raw_clean in data_keys:
-        return raw_clean
+    """
+    Finds a matching key in the data dictionary by comparing lowercase, stripped versions.
+    """
+    raw_placeholder_clean = raw_placeholder.strip().lower()
     for key in data_keys:
-        if clean_placeholder(raw_placeholder) == key.lower():
+        if key.lower() == raw_placeholder_clean:
             return key
     return None
 
-
 def replace_in_paragraphs(paragraphs, data):
+    # This function is for the DOCX generator and seems okay.
+    # For simplicity, we are focusing on the PPTX generator.
     for para in paragraphs:
+        # NOTE: This simple text replace will not handle fragmented runs in DOCX
         matches = re.findall(r"\{\{(.*?)\}\}", para.text)
         for raw_ph in matches:
             actual_key = find_matching_key(raw_ph, data)
-            if actual_key:
-                value = data[actual_key]
-                
-                # Ensure value is a string
-                if isinstance(value, list):
-                    value = ", ".join(value)  # Join list items into a single string
-                
-                if actual_key in IMAGE_FIELDS:
-                    image_path = os.path.abspath(value)  # Ensure absolute path
-                    if os.path.isfile(image_path):
-                        para.clear()
-                        para.add_run().add_picture(image_path, width=Inches(4.5))
-                    else:
-                        print(f"Image file not found: {image_path}")
-                        full_ph = f"{{{{{raw_ph}}}}}"
-                        para.text = para.text.replace(full_ph, f"[Image missing: {actual_key}]")
-                else:
-                    full_ph = f"{{{{{raw_ph}}}}}"
-                    para.text = para.text.replace(full_ph, value)
+            if actual_key and actual_key not in IMAGE_FIELDS:
+                value = data.get(actual_key, "")
+                if isinstance(value, list): value = ", ".join(value)
+                para.text = para.text.replace(f"{{{{{raw_ph}}}}}", str(value))
 
 def replace_in_tables(tables, data):
     for table in tables:
         for row in table.rows:
             for cell in row.cells:
                 replace_in_paragraphs(cell.paragraphs, data)
-
 
 def generate_docx(data: dict, output_path: str):
     doc = Document(DOCX_TEMPLATE)
@@ -91,75 +75,86 @@ def generate_docx(data: dict, output_path: str):
 
 def generate_pptx(data: dict, output_path: str):
     ppt = Presentation(PPTX_TEMPLATE)
-    for slide in ppt.slides:
-        for shape in list(slide.shapes):
-            if shape.has_text_frame:
-                tf = shape.text_frame
-                text = "\n".join(run.text for p in tf.paragraphs for run in p.runs)
+    for slide_idx, slide in enumerate(ppt.slides):
+        shapes_to_delete = []
 
-                # Handle bullet list
-                if "{{list of documents required}}" in text:
-                    tf.clear()
-                    for doc in data.get('list of documents required', []):
+        for shape in list(slide.shapes):
+            if not shape.has_text_frame:
+                continue
+
+            full_shape_text = "".join(run.text for p in shape.text_frame.paragraphs for run in p.runs)
+            all_matches = re.findall(r"\{\{(.*?)\}\}", full_shape_text)
+            
+            if all_matches:
+                print(f"\n--- Placeholders Found on Slide {slide_idx + 1} ---")
+                for ph in all_matches:
+                    key_found = find_matching_key(ph, data.keys())
+                    print(f"  - Reading '{ph}', Matched Key: {key_found}")
+
+            if not all_matches:
+                continue
+
+            is_image_shape = False
+            image_key = None
+            image_path = None
+
+            for raw_ph in all_matches:
+                actual_key = find_matching_key(raw_ph, data.keys())
+                if actual_key and actual_key in IMAGE_FIELDS:
+                    is_image_shape = True
+                    image_key = actual_key
+                    value = data.get(image_key, "")
+                    image_path = os.path.abspath(value) if value else ""
+                    break
+            
+            if is_image_shape:
+                if image_path and os.path.isfile(image_path):
+                    try:
+                        slide.shapes.add_picture(image_path, shape.left, shape.top, width=shape.width, height=shape.height)
+                        shapes_to_delete.append(shape)
+                    except Exception as e:
+                        print(f"ERROR: Could not add image {image_path}. Details: {e}")
+                        shape.text_frame.text = f"[Image Error: {image_key}]"
+                else:
+                    shape.text_frame.text = f"[Image Missing: {image_key}]"
+                continue
+
+            if "{{list of documents required}}" in full_shape_text:
+                tf = shape.text_frame
+                tf.clear()
+                doc_list = data.get('list of documents required', [])
+                if doc_list:
+                    first_p = tf.paragraphs[0] if tf.paragraphs else tf.add_paragraph()
+                    first_p.text = doc_list[0]
+                    first_p.level = 0
+                    for doc in doc_list[1:]:
                         p = tf.add_paragraph()
                         p.text = doc
                         p.level = 0
+                continue
+            
+            for para in shape.text_frame.paragraphs:
+                para_text = "".join(run.text for run in para.runs)
+                para_matches = re.findall(r"\{\{(.*?)\}\}", para_text)
+
+                if not para_matches:
                     continue
+                
+                final_text = para_text
 
-                # Handle other placeholders
-                for para in tf.paragraphs:
-                    for run in para.runs:
-                        matches = re.findall(r"\{\{(.*?)\}\}", run.text)
-                        for raw_ph in matches:
-                            actual_key = find_matching_key(raw_ph, data)
-                            if actual_key:
-                                value = data[actual_key]
-                                full_ph = f"{{{{{raw_ph}}}}}"
-
-                                # 🆕 If it is an image placeholder, handle all scenarios within this block
-                                if actual_key in IMAGE_FIELDS:
-                                    image_path = os.path.abspath(value)
-                                    
-                                    # New variable to store a missing message if applicable
-                                    missing_message = None
-
-                                    if not value:
-                                        missing_message = "[Image Missing: No file uploaded]"
-                                    elif not os.path.isfile(image_path):
-                                        missing_message = "[Image Missing: File not found]"
-                                    elif not image_path.lower().endswith(('.jpg', '.jpeg')):
-                                        missing_message = "[Image Missing: Wrong file type]"
-                                    else:
-                                        try:
-                                            # Final validation to check file integrity
-                                            Image.open(image_path).verify()
-
-                                            left = shape.left
-                                            top = shape.top
-                                            width = PptInches(4.5)
-                                            height = None
-                                            
-                                            # Remove the original shape
-                                            slide.shapes._spTree.remove(shape._element)
-                                            
-                                            # Insert the image
-                                            slide.shapes.add_picture(image_path, left, top, width=width, height=height)
-
-                                        except (IOError, OSError) as e:
-                                            print(f"⚠️ Could not process image file at: {image_path} due to error: {e}")
-                                            missing_message = f"[Image Missing: Invalid File]"
-                                    
-                                    # 🆕 This block handles all failure scenarios for image placeholders.
-                                    if missing_message:
-                                        run.text = run.text.replace(full_ph, missing_message)
-                                else:
-                                    # ✅ This is the correct location for the regular text replacement block.
-                                    # Replace text normally
-                                    if isinstance(value, list):
-                                        value = ", ".join(value)
-                                    if isinstance(value, str):
-                                        run.text = run.text.replace(full_ph, value)
-                                    else:
-                                        print(f"⚠️ Non-string for {actual_key}: {type(value)}")
+                for raw_ph in para_matches:
+                    actual_key = find_matching_key(raw_ph, data.keys())
+                    if actual_key:
+                        value = data.get(actual_key, f"[{actual_key} ?]")
+                        if isinstance(value, list): value = ", ".join(value)
+                        final_text = final_text.replace(f"{{{{{raw_ph}}}}}", str(value))
+                
+                para.clear()
+                run = para.add_run()
+                run.text = final_text
+        
+        for shape in shapes_to_delete:
+            sp_element = shape.element
+            sp_element.getparent().remove(sp_element)
 
     ppt.save(output_path)
