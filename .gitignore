@@ -1,0 +1,30 @@
+# Python bytecode and cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.venv/  # Include if you might use a .venv name for consistency
+
+# Environment variables (often contains secrets)
+.env
+*.env # Catch other variations like .env.local, .env.development
+
+# Editor/IDE specific files
+.vscode/            # VS Code workspace settings
+.idea/              # IntelliJ/PyCharm IDE settings (if you ever use them)
+*.sublime-project   # Sublime Text project files
+*.sublime-workspace # Sublime Text workspace files
+.DS_Store           # macOS system files
+Thumbs.db           # Windows system files
+
+# Flask specific (if you had them)
+# instance/           # Default instance folder for Flask (often contains config/db)
+# var/                # Other Flask-specific variable data
+# *.sqlite            # SQLite database files (if your DB isn't elsewhere)
+
+# Logs and temporary files
+*.log
+*.tmp
