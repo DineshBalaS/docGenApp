@@ -96,11 +96,11 @@ def index():
                 if uploaded_file and uploaded_file.filename:
                     filename = uploaded_file.filename
                     filepath = os.path.join(session_folder, filename)
-                    if not filename.lower().endswith(('.jpg', '.jpeg')):
+                    if not filename.lower().endswith(('.jpg', '.jpeg', '.png')):
                         # 🆕 Handle wrong file type
                         data[key] = ''
                         data[f"{key}__web"] = ''
-                        flash(f"The file for '{key}' must be a JPEG or JPG.", 'error')
+                        flash(f"The file for '{key}' must be a JPEG, JPG, or PNG.", 'error')
                         continue # 🆕 Skip to the next key
                     
                     uploaded_file.save(filepath)
